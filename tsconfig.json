@@ -1,3 +1,4 @@
 {
-  "extends": "code-concierge/src/settings/tsconfig.json"
+  "extends": "code-concierge/src/settings/tsconfig.json",
+  "include": ["src"]
 }

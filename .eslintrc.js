@@ -1,3 +1,3 @@
 module.exports = {
-  ...require('code-concierge').jest,
+  ...require('code-concierge').eslint,
 };
