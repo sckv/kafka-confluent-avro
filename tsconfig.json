@@ -1,0 +1,3 @@
+{
+  "extends": "code-concierge/src/settings/tsconfig.json"
+}

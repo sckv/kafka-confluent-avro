@@ -1198,10 +1198,10 @@ co@^4.6.0:
   resolved "https://registry.yarnpkg.com/co/-/co-4.6.0.tgz#6ea6bdf3d853ae54ccb8e47bfa0bf3f9031fb184"
   integrity sha1-bqa989hTrlTMuOR7+gvz+QMfsYQ=
 
-code-concierge@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/code-concierge/-/code-concierge-1.0.0.tgz#cacafe22dca1933a778af5999c92581c6475104c"
-  integrity sha512-GuNAQdjt1iSCsjplM0pbaKGfGrlQhNha7DomSZiDzEnp9UPa6SlgpOMHc9DW4FIgqlUxT8l1vTeyaDP5apRksQ==
+code-concierge@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/code-concierge/-/code-concierge-1.0.2.tgz#4389a4ffd5dd170413be43f2751798139b4cd9e2"
+  integrity sha512-DIic9WwzMQ+SCq1EqWjCbT3W3xuw9E39kZW3qRWEzwgUdAjMd9TrfetD6aPLsPpaPgoBOKZ7VjxeFIYhTu73lw==
   dependencies:
     "@types/jest" "^27.4.1"
     "@types/node" "^17.0.23"
