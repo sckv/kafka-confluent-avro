@@ -10,8 +10,12 @@
   },
   "devDependencies": {
     "@types/node-fetch": "^2.6.1",
-    "axios": "^0.26.1",
-    "code-concierge": "^1.0.3"
+    "code-concierge": "^1.0.3",
+    "@semantic-release/commit-analyzer": "^9.0.2",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^8.0.2",
+    "conventional-changelog-conventionalcommits": "^4.6.3",
+    "semantic-release": "^19.0.2"
   },
   "scripts": {
     "lint": "eslint ./src",
