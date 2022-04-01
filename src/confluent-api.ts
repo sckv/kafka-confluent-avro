@@ -5,7 +5,7 @@ import {
   GetSchemaByIdResponse,
   GetSchemasTypesResponse,
   GetSchemaVersionsResponse,
-  GetSubjectByVersionResponse,
+  GetSchemaBySubjectAndVersionResponse,
   GetSubjectsResponse,
   GetSubjectVersionSchema,
   GetSubjectVersionsResponse,
@@ -49,7 +49,7 @@ export class ConfluentApi {
       throw new ConfluentApiError(json.error_code, json.message);
     }
 
-    return json;
+    return { schema: JSON.parse(json.schema) };
   }
 
   async getSchemasTypes(): Promise<GetSchemasTypesResponse> {
@@ -115,10 +115,10 @@ export class ConfluentApi {
     return json;
   }
 
-  async getSubjectByVersion(
+  async getSchemaBySubjectAndVersion(
     subject: string,
     version: number | 'latest',
-  ): Promise<GetSubjectByVersionResponse> {
+  ): Promise<GetSchemaBySubjectAndVersionResponse> {
     const response = await fetch(`${this.host}/subjects/${subject}/versions/${version}`, {
       headers: this.headers,
       agent: this.agent,
@@ -129,7 +129,10 @@ export class ConfluentApi {
     if (json.error_code) {
       throw new ConfluentApiError(json.error_code, json.message);
     }
-    return json;
+    return {
+      ...json,
+      schema: JSON.parse(json.schema),
+    };
   }
 
   async getSubjectVersionSchema(

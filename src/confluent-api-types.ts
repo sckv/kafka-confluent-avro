@@ -1,8 +1,9 @@
+export type ConfluentSchema = { [k: string]: any } | { [k: string]: any }[];
 /**
  * @see https://docs.confluent.io/platform/current/schema-registry/develop/api.html#get--schemas-ids-int-%20id
  */
 export type GetSchemaByIdResponse = {
-  schema: string;
+  schema: ConfluentSchema;
 };
 
 /**
@@ -36,12 +37,12 @@ export type DeleteSubjectResponse = number[];
 /**
  * @see https://docs.confluent.io/platform/current/schema-registry/develop/api.html#get--subjects-(string-%20subject)-versions-(versionId-%20version)
  */
-export type GetSubjectByVersionResponse = {
+export type GetSchemaBySubjectAndVersionResponse = {
   subject: string;
   id: number;
   version: number;
   schemaType?: string;
-  schema: string;
+  schema: ConfluentSchema;
 };
 
 /**

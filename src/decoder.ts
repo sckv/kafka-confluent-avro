@@ -2,9 +2,9 @@ import avro from 'avsc';
 
 import { Cache } from './cache';
 import { AvroSchemaDecodeError } from './errors';
+import { ConfluentSchema } from './confluent-api-types';
 
 import { format } from 'util';
-import crypto from 'crypto';
 
 export class AvroDecoder {
   cache: Cache<avro.Type>;
@@ -15,14 +15,14 @@ export class AvroDecoder {
 
   decode<V extends { [k: string]: any }>(
     buffer: Buffer,
-    schema: string | avro.schema.AvroSchema,
+    schema: ConfluentSchema | avro.schema.AvroSchema,
   ): V {
     const avroType = this.convertToType(schema);
 
     return avroType.fromBuffer(buffer);
   }
 
-  encode(data: string, schema: string): Buffer {
+  encode(data: string, schema: ConfluentSchema): Buffer {
     const avroType = this.convertToType(schema);
 
     this.assertValid(avroType, data);
@@ -30,8 +30,8 @@ export class AvroDecoder {
     return avroType.toBuffer(data);
   }
 
-  convertToType(schema: string | avro.schema.AvroSchema): avro.Type {
-    return avro.Type.forSchema(typeof schema === 'string' ? JSON.stringify(schema) : schema);
+  convertToType(schema: avro.schema.AvroSchema | ConfluentSchema): avro.Type {
+    return avro.Type.forSchema(schema as any);
   }
 
   assertValid(type: avro.Type, value: any): boolean {

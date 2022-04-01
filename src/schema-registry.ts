@@ -1,12 +1,14 @@
 import { Cache } from './cache';
 import { ConfluentApi } from './confluent-api';
+import { ConfluentSchema } from './confluent-api-types';
 import { AvroDecoder } from './decoder';
-import { Schema } from './schema';
 
 type SchemaCache = {
-  schema: { [k: string]: any } | { [k: string]: any }[] | string;
+  schema: ConfluentSchema;
   version: number;
-  uniqueId: number;
+  subject: string;
+  id: number;
+  schemaType?: string;
 };
 export class SchemaRegistry {
   DEFAULT_OFFSET = 0;
@@ -19,71 +21,99 @@ export class SchemaRegistry {
     private schemaCache: Cache<SchemaCache> = new Cache(),
   ) {}
 
-  async encodeMessageByTopic(value: any, topic: string): Promise<Schema> {
-    const subject = this.createSubject(topic);
+  setCache(propertiesToCache: {
+    subject: string;
+    id: number;
+    version: number;
+    schemaType?: string;
+    schema: ConfluentSchema;
+  }) {
+    this.schemaCache.set(propertiesToCache.subject, {
+      id: propertiesToCache.id,
+      schema: propertiesToCache.schema,
+      version: propertiesToCache.version,
+      subject: propertiesToCache.subject,
+      schemaType: propertiesToCache.schemaType || 'AVRO',
+    });
 
-    const schemaString = this.schemaCache.get(subject);
-
-    if (!schemaString) {
-      const schema = await this.confluentApi.getSubjectByVersion(subject, 'latest');
-
-      this.schemaCache.set(`${subject}-${schema.version}`, {
-        uniqueId: schema.id,
-        schema: schema.schema,
-        version: schema.version,
-      });
-
-      this.schemaCache.set(`${schema.id}-unique`, {
-        uniqueId: schema.id,
-        schema: schema.schema,
-        version: schema.version,
-      });
-    }
-
-    const cachedSchema = this.schemaCache.get(subject)!;
-    const encodedPayload = this.avroDecoder.encode(value, cachedSchema.schema as any);
-
-    return new Schema(
-      cachedSchema.version,
-      encodedPayload,
-      subject,
-      cachedSchema.schema,
-      cachedSchema.uniqueId,
-      this,
-    );
+    this.schemaCache.set(`${propertiesToCache.id}`, {
+      id: propertiesToCache.id,
+      schema: propertiesToCache.schema,
+      version: propertiesToCache.version,
+      subject: propertiesToCache.subject,
+      schemaType: propertiesToCache.schemaType || 'AVRO',
+    });
   }
 
-  async encodePreviousVersion(schema: Schema): Schema {
-    if (schema.version === 1) {
-      throw new Error('Only have one version of the schema');
+  async encodeMessageByTopic(
+    value: any,
+    topic: string,
+    schemaCache?: SchemaCache,
+  ): Promise<Buffer> {
+    const subject = this.createSubject(topic);
+
+    let schema = schemaCache || this.schemaCache.get(subject);
+
+    if (!schema) {
+      schema = await this.confluentApi.getSchemaBySubjectAndVersion(subject, 'latest');
+      this.setCache(schema);
     }
 
-    const previousVersion = schema.version - 1;
+    const encodedPayload = this.avroDecoder.encode(value, schema.schema as any);
+    return this.packBuffer(schema.id, encodedPayload);
+  }
 
-    const cached = this.schemaCache.get(`${schema.subject}-${previousVersion}`);
-    if (!cached) {
-      const previousVersionSchema = await this.confluentApi.getSubjectByVersion(
-        schema.subject,
-        previousVersion,
+  async encodeMessageBySchemaId(value: any, schemaId: number): Promise<Buffer> {
+    let schema = this.schemaCache.get(`${schemaId}`);
+
+    if (!schema) {
+      const schemaVersions = await this.confluentApi.getSchemaVersions(schemaId);
+      schema = await await this.confluentApi.getSchemaBySubjectAndVersion(
+        schemaVersions[0].subject,
+        'latest',
       );
 
-      this.schemaCache.set(`${schema.subject}-${previousVersion}`, {
-        uniqueId: schema.uniqueId,
-        schema: schema.schema,
-        version: previousVersion,
-      });
+      this.setCache(schema);
     }
 
-    const cachedSchema = this.schemaCache.get(`${schema.subject}-${previousVersion}`)!;
-    const encodedPayload = this.avroDecoder.encode(schema.payload, cachedSchema.schema as any);
-    return new Schema(
-      cachedSchema.version,
-      encodedPayload,
-      schema.subject,
-      cachedSchema.schema,
-      cachedSchema.uniqueId,
-      this,
-    );
+    const encodedPayload = this.avroDecoder.encode(value, schema.schema as any);
+    return this.packBuffer(schema.id, encodedPayload);
+  }
+
+  async encodeMessageByTopicSafe(value: any, topic: string, recourseIndex = 1): Promise<Buffer> {
+    if (recourseIndex && recourseIndex > 3) {
+      throw new Error(
+        `Compatible schema for this payload can't be found ${JSON.stringify(
+          value,
+        )}. Tried ${recourseIndex} times.`,
+      );
+    }
+
+    const subject = this.createSubject(topic);
+    let schema = this.schemaCache.get(subject);
+
+    if (!schema) {
+      schema = await this.confluentApi.getSchemaBySubjectAndVersion(subject, 'latest');
+      this.setCache(schema);
+    }
+
+    try {
+      const encodedPayload = this.avroDecoder.encode(value, schema.schema as any);
+      return this.packBuffer(schema.id, encodedPayload);
+    } catch (error) {
+      console.log(error);
+      if (schema.version === 1) {
+        throw new Error('Only have one version of the schema');
+      }
+
+      const previousVersion = await this.confluentApi.getSchemaBySubjectAndVersion(
+        subject,
+        schema.version - 1,
+      );
+
+      this.setCache(previousVersion);
+      return this.encodeMessageByTopicSafe(value, topic, recourseIndex + 1);
+    }
   }
 
   async decode<V = any>(value: Buffer): Promise<V> {
@@ -93,30 +123,24 @@ export class SchemaRegistry {
       return JSON.parse(Buffer.toString()) as unknown as V;
     }
 
-    const cached = this.schemaCache.get(`${extractedBuffer.schemaId}-unique`);
+    let cached = this.schemaCache.get(`${extractedBuffer.schemaId}-unique`);
 
     if (!cached) {
       const schema = await this.confluentApi.getSchemaById(extractedBuffer.schemaId);
       const versions = await this.confluentApi.getSchemaVersions(extractedBuffer.schemaId);
       const latestVersionSubject = versions[versions.length - 1];
 
-      this.schemaCache.set(`${extractedBuffer.schemaId}-unique`, {
-        uniqueId: extractedBuffer.schemaId,
-        schema: schema.schema,
+      cached = {
+        id: extractedBuffer.schemaId,
+        schema,
         version: latestVersionSubject.version,
-      });
+        subject: latestVersionSubject.subject,
+      };
 
-      this.schemaCache.set(`${latestVersionSubject.subject}-${latestVersionSubject.version}`, {
-        uniqueId: extractedBuffer.schemaId,
-        schema: schema.schema,
-        version: latestVersionSubject.version,
-      });
+      this.setCache(cached);
     }
 
-    return this.avroDecoder.decode(
-      extractedBuffer.payload,
-      this.schemaCache.get(`${extractedBuffer.schemaId}-unique`)!.schema as any,
-    ) as unknown as V;
+    return this.avroDecoder.decode(extractedBuffer.payload, cached.schema as any) as unknown as V;
   }
 
   createSubject(topic: string): string {
