@@ -1,4 +1,7 @@
 {
   "extends": "code-concierge/src/settings/tsconfig.build.json",
+  "compilerOptions": {
+    "outDir": "lib"
+  },
   "include": ["src"]
 }
