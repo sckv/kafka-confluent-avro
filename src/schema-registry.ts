@@ -2,6 +2,7 @@ import { Cache } from './cache';
 import { ConfluentApi } from './confluent-api';
 import { ConfluentSchema } from './confluent-api-types';
 import { AvroDecoder } from './decoder';
+import { NoCompatibleVersionError } from './errors';
 
 type SchemaCache = {
   schema: ConfluentSchema;
@@ -11,14 +12,14 @@ type SchemaCache = {
   schemaType?: string;
 };
 export class SchemaRegistry {
-  DEFAULT_OFFSET = 0;
-  MAGIC_BYTE = Buffer.alloc(1);
+  private readonly DEFAULT_OFFSET = 0;
+  private readonly MAGIC_BYTE = Buffer.alloc(1);
 
   constructor(
-    host: string,
-    private avroDecoder: AvroDecoder = new AvroDecoder(),
-    private confluentApi: ConfluentApi = new ConfluentApi(host),
-    private schemaCache: Cache<SchemaCache> = new Cache(),
+    connection: { host: string; auth?: { username: string; password: string } },
+    public confluentApi: ConfluentApi = new ConfluentApi(connection.host, connection.auth),
+    public avroDecoder: AvroDecoder = new AvroDecoder(),
+    public schemaCache: Cache<SchemaCache> = new Cache(),
   ) {}
 
   setCache(propertiesToCache: {
@@ -55,7 +56,7 @@ export class SchemaRegistry {
     let schema = schemaCache || this.schemaCache.get(subject);
 
     if (!schema) {
-      schema = await this.confluentApi.getSchemaBySubjectAndVersion(subject, 'latest');
+      schema = await this.confluentApi.getEntryBySubjectAndVersion(subject, 'latest');
       this.setCache(schema);
     }
 
@@ -68,7 +69,7 @@ export class SchemaRegistry {
 
     if (!schema) {
       const schemaVersions = await this.confluentApi.getSchemaVersions(schemaId);
-      schema = await await this.confluentApi.getSchemaBySubjectAndVersion(
+      schema = await await this.confluentApi.getEntryBySubjectAndVersion(
         schemaVersions[0].subject,
         'latest',
       );
@@ -82,18 +83,14 @@ export class SchemaRegistry {
 
   async encodeMessageByTopicSafe(value: any, topic: string, recourseIndex = 1): Promise<Buffer> {
     if (recourseIndex && recourseIndex > 3) {
-      throw new Error(
-        `Compatible schema for this payload can't be found ${JSON.stringify(
-          value,
-        )}. Tried ${recourseIndex} times.`,
-      );
+      throw new NoCompatibleVersionError(value, topic, recourseIndex);
     }
 
     const subject = this.createSubject(topic);
     let schema = this.schemaCache.get(subject);
 
     if (!schema) {
-      schema = await this.confluentApi.getSchemaBySubjectAndVersion(subject, 'latest');
+      schema = await this.confluentApi.getEntryBySubjectAndVersion(subject, 'latest');
       this.setCache(schema);
     }
 
@@ -103,10 +100,10 @@ export class SchemaRegistry {
     } catch (error) {
       console.log(error);
       if (schema.version === 1) {
-        throw new Error('Only have one version of the schema');
+        throw new NoCompatibleVersionError(value, topic, recourseIndex);
       }
 
-      const previousVersion = await this.confluentApi.getSchemaBySubjectAndVersion(
+      const previousVersion = await this.confluentApi.getEntryBySubjectAndVersion(
         subject,
         schema.version - 1,
       );

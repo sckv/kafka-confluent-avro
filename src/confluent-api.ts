@@ -53,102 +53,65 @@ export class ConfluentApi {
   }
 
   async getSchemasTypes(): Promise<GetSchemasTypesResponse> {
-    const response = await fetch(`${this.host}/schemas/types`, {
-      headers: this.headers,
-      agent: this.agent,
-    });
-
-    const json = await response.json();
-    if (json.error_code) {
-      throw new ConfluentApiError(json.error_code, json.message);
-    }
-    return json;
+    return await this.callApi(`${this.host}/schemas/types`);
   }
 
   async getSchemaVersions(schemaId: number): Promise<GetSchemaVersionsResponse> {
-    const response = await fetch(`${this.host}/schemas/ids/${schemaId}/versions`, {
-      headers: this.headers,
-      agent: this.agent,
-    });
-    const json = await response.json();
-    if (json.error_code) {
-      throw new ConfluentApiError(json.error_code, json.message);
-    }
-    return json;
+    return await this.callApi(`${this.host}/schemas/ids/${schemaId}/versions`);
   }
 
   async getSubjects(): Promise<GetSubjectsResponse> {
-    const response = await fetch(`${this.host}/subjects`, {
-      headers: this.headers,
-      agent: this.agent,
-    });
-    const json = await response.json();
-    if (json.error_code) {
-      throw new ConfluentApiError(json.error_code, json.message);
-    }
-    return json;
+    return await this.callApi(`${this.host}/subjects`);
   }
 
   async getSubjectVersions(subject: string): Promise<GetSubjectVersionsResponse> {
-    const response = await fetch(`${this.host}/subjects/${subject}/versions`, {
-      headers: this.headers,
-      agent: this.agent,
-    });
-    const json = await response.json();
-    if (json.error_code) {
-      throw new ConfluentApiError(json.error_code, json.message);
-    }
-    return json;
+    return await this.callApi(`${this.host}/subjects/${subject}/versions`);
   }
 
-  async deleteSubject(subject: string): Promise<DeleteSubjectResponse> {
-    const response = await fetch(`${this.host}/subjects/${subject}`, {
-      method: 'DELETE',
-      headers: this.headers,
-    });
-
-    const json = await response.json();
-
-    if (json.error_code) {
-      throw new ConfluentApiError(json.error_code, json.message);
-    }
-    return json;
-  }
-
-  async getSchemaBySubjectAndVersion(
+  async getEntryBySubjectAndVersion(
     subject: string,
     version: number | 'latest',
   ): Promise<GetSchemaBySubjectAndVersionResponse> {
-    const response = await fetch(`${this.host}/subjects/${subject}/versions/${version}`, {
-      headers: this.headers,
-      agent: this.agent,
-    });
+    const json = await this.callApi(`${this.host}/subjects/${subject}/versions/${version}`);
 
-    const json = await response.json();
-
-    if (json.error_code) {
-      throw new ConfluentApiError(json.error_code, json.message);
-    }
     return {
       ...json,
       schema: JSON.parse(json.schema),
     };
   }
 
-  async getSubjectVersionSchema(
+  async getSchemaBySubjectAndVersion(
     subject: string,
     version: number | 'latest',
   ): Promise<GetSubjectVersionSchema> {
-    const response = await fetch(`${this.host}/subjects/${subject}/versions/${version}/schema`, {
+    return await this.callApi(`${this.host}/subjects/${subject}/versions/${version}/schema`);
+  }
+
+  async callApi(url: string): Promise<any> {
+    const response = await fetch(url, {
       headers: this.headers,
       agent: this.agent,
     });
 
     const json = await response.json();
-
     if (json.error_code) {
       throw new ConfluentApiError(json.error_code, json.message);
     }
+
     return json;
   }
+
+  // async deleteSubject(subject: string): Promise<DeleteSubjectResponse> {
+  //   const response = await fetch(`${this.host}/subjects/${subject}`, {
+  //     method: 'DELETE',
+  //     headers: this.headers,
+  //   });
+
+  //   const json = await response.json();
+
+  //   if (json.error_code) {
+  //     throw new ConfluentApiError(json.error_code, json.message);
+  //   }
+  //   return json;
+  // }
 }

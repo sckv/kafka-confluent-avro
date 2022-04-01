@@ -13,3 +13,13 @@ export class AvroSchemaDecodeError extends Error {
     super(message);
   }
 }
+
+export class NoCompatibleVersionError extends Error {
+  constructor(value: any, topic: string, timesTried: number) {
+    super(
+      `No compatible schema for this payload can be found ${JSON.stringify(
+        value,
+      )}. Tried ${timesTried} times for topic ${topic}.`,
+    );
+  }
+}
