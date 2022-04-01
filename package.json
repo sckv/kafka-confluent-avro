@@ -43,6 +43,7 @@
     "lint": "eslint ./src",
     "lint:fix": "eslint ./src --fix",
     "prettify": "prettier --write \"./src/**/*.{ts,tsx}\"",
+    "release": "semantic-release -e ./.releaserc.json",
     "test": "jest --runInBand --coverage",
     "test:watch": "jest --runInBand --watch"
   }
