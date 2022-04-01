@@ -26,7 +26,7 @@ Encode a value with a latest version of a schema by unique schema id.
 
 Safely encode a value with some schema for a topic. If the value is invalid for the `latest` version of the schema, it will retry downgrading the schema to the previous version.
 
-The process will retry for 3 different previous schemas, throws an error if there is no valid outcome.
+The process will retry for **3 previous versions**, throws an error if there is no valid outcome.
 
 ### `decode`
 
