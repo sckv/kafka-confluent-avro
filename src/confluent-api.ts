@@ -46,12 +46,15 @@ export class ConfluentApi {
     normalize = true,
     schemaType = 'AVRO',
   }: CreateSchemaBySubject): Promise<CreateSchemaBySubjectResponse> {
-    const response = await fetch(`${this.host}/subjects/${subject}?normalize=${normalize}`, {
-      method: 'POST',
-      headers: this.headers,
-      agent: this.agent,
-      body: JSON.stringify({ schema: JSON.stringify(schema), schemaType }),
-    });
+    const response = await fetch(
+      `${this.host}/subjects/${subject}/versions?normalize=${normalize}`,
+      {
+        method: 'POST',
+        headers: this.headers,
+        agent: this.agent,
+        body: JSON.stringify({ schema: JSON.stringify(schema), schemaType }),
+      },
+    );
 
     const json = await response.json();
     if (json.error_code) {

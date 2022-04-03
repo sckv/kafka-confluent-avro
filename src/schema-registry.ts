@@ -13,7 +13,7 @@ type SchemaCache = {
 };
 export class SchemaRegistry {
   private readonly DEFAULT_OFFSET = 0;
-  private readonly MAGIC_BYTE = Buffer.alloc(1);
+  private readonly MAGIC_BYTE_SCHEMA_PRESENT = Buffer.alloc(1);
 
   constructor(
     connection: { host: string; auth?: { username: string; password: string } },
@@ -116,7 +116,7 @@ export class SchemaRegistry {
   async decode<V = any>(value: Buffer): Promise<V> {
     const extractedBuffer = this.extractBuffer(value);
 
-    if (!extractedBuffer.magicByte.equals(this.MAGIC_BYTE)) {
+    if (!extractedBuffer.magicByte.equals(this.MAGIC_BYTE_SCHEMA_PRESENT)) {
       return JSON.parse(Buffer.toString()) as unknown as V;
     }
 
@@ -156,6 +156,6 @@ export class SchemaRegistry {
     const schemaIdBuffer = Buffer.alloc(4);
     schemaIdBuffer.writeInt32BE(schemaId, this.DEFAULT_OFFSET);
 
-    return Buffer.concat([this.MAGIC_BYTE, schemaIdBuffer, encodedPayload]);
+    return Buffer.concat([this.MAGIC_BYTE_SCHEMA_PRESENT, schemaIdBuffer, encodedPayload]);
   }
 }
