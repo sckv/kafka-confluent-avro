@@ -1,7 +1,6 @@
 import fetch from 'node-fetch';
 
 import {
-  DeleteSubjectResponse,
   GetSchemaByIdResponse,
   GetSchemasTypesResponse,
   GetSchemaVersionsResponse,
@@ -9,6 +8,8 @@ import {
   GetSubjectsResponse,
   GetSubjectVersionSchema,
   GetSubjectVersionsResponse,
+  CreateSchemaBySubject,
+  CreateSchemaBySubjectResponse,
 } from './confluent-api-types';
 import { ConfluentApiError } from './errors';
 
@@ -17,7 +18,8 @@ import { Agent as HttpsAgent } from 'https';
 
 export class ConfluentApi {
   headers: { [k: string]: any } = {
-    accept: 'application/vnd.schemaregistry.v1+json, application/json',
+    accept:
+      'application/vnd.schemaregistry.v1+json, application/vnd.schemaregistry+json, application/json',
   };
 
   agent: HttpAgent | HttpsAgent;
@@ -36,6 +38,30 @@ export class ConfluentApi {
     this.headers.authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString(
       'base64',
     )}`;
+  }
+
+  async createSchemaBySubject({
+    schema,
+    subject,
+    normalize = true,
+    schemaType = 'AVRO',
+  }: CreateSchemaBySubject): Promise<CreateSchemaBySubjectResponse> {
+    const response = await fetch(`${this.host}/subjects/${subject}?normalize=${normalize}`, {
+      method: 'POST',
+      headers: this.headers,
+      agent: this.agent,
+      body: JSON.stringify({ schema: JSON.stringify(schema), schemaType }),
+    });
+
+    const json = await response.json();
+    if (json.error_code) {
+      throw new ConfluentApiError(json.error_code, json.message);
+    }
+
+    return {
+      ...json,
+      schema: JSON.parse(json.schema),
+    };
   }
 
   async getSchemaById(id: number): Promise<GetSchemaByIdResponse> {

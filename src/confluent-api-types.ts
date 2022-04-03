@@ -61,3 +61,20 @@ export type CreateSubjectSchemaParameter = {
 export type CreateSubjectSchema = {
   id: number;
 };
+
+/**
+ * @see https://docs.confluent.io/platform/current/schema-registry/develop/api.html#post--subjects-(string-%20subject)
+ */
+export type CreateSchemaBySubject = {
+  subject: string;
+  schema: ConfluentSchema;
+  schemaType?: 'AVRO';
+  normalize?: boolean;
+};
+
+export type CreateSchemaBySubjectResponse = {
+  subject: string;
+  id: number;
+  schema: ConfluentSchema;
+  version: number;
+};
