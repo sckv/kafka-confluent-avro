@@ -62,8 +62,8 @@ describe('Schema Registry suite', () => {
     await producer.connect();
 
     await schemaRegistry.confluentApi.configGlobalCompatibility('FORWARD');
-    await schemaRegistry.confluentApi.deleteSubject('test-topic-schema');
-    await schemaRegistry.confluentApi.deleteSubject('test-topic-schema', true);
+    await schemaRegistry.confluentApi.deleteSubject('test-topic-schema').catch(console.error);
+    await schemaRegistry.confluentApi.deleteSubject('test-topic-schema', true).catch(console.error);
   });
 
   afterAll(async () => {
@@ -167,13 +167,35 @@ describe('Schema Registry suite', () => {
     ).rejects.toThrow(NoCompatibleVersionError);
   });
 
-  test('Encodes correctly a schema by uniqueSchema id', async () => {
+  test('Encodes and correctly decodes a schema by uniqueSchema id', async () => {
     const encoded = await schemaRegistry.encodeMessageBySchemaId(
       { fullName: 'Full Name', city: 'City', age: 1, email: 'example@kek.com' },
       latestSchemaId,
     );
 
     const decoded = await schemaRegistry.decode(encoded);
+
+    expect(decoded).toEqual({
+      fullName: 'Full Name',
+      city: 'City',
+      age: 1,
+      email: 'example@kek.com',
+    });
+  });
+
+  test('Do not decode a buffer with no schema enabled', async () => {
+    const buf = Buffer.from(
+      JSON.stringify({
+        fullName: 'Full Name',
+        city: 'City',
+        age: 1,
+        email: 'example@kek.com',
+      }),
+    );
+
+    console.log(buf.toString());
+
+    const decoded = await schemaRegistry.decode(buf);
 
     expect(decoded).toEqual({
       fullName: 'Full Name',

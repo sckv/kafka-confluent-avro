@@ -125,7 +125,7 @@ export class SchemaRegistry {
         this.setCache(previousVersion);
       }
 
-      return this.encodeMessageByTopicSafe(value, topic, {
+      return await this.encodeMessageByTopicSafe(value, topic, {
         recourseIndex: recourseIndex + 1,
         version: schema.version - 1,
       });
@@ -136,7 +136,7 @@ export class SchemaRegistry {
     const extractedBuffer = this.extractBuffer(value);
 
     if (!extractedBuffer.magicByte.equals(this.MAGIC_BYTE_SCHEMA_PRESENT)) {
-      return JSON.parse(Buffer.toString()) as unknown as V;
+      return JSON.parse(value.toString()) as unknown as V;
     }
 
     let cached = this.schemaCache.get(`${extractedBuffer.schemaId}-unique`);

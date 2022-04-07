@@ -114,7 +114,6 @@ export class ConfluentApi {
   ): Promise<GetSchemaBySubjectAndVersionResponse> {
     const json = await this.callApi(`${this.host}/subjects/${subject}/versions/${version}`);
 
-    console.log(json);
     return {
       ...json,
       schema: JSON.parse(json.schema),
