@@ -10,6 +10,7 @@ import {
   GetSubjectVersionsResponse,
   CreateSchemaBySubject,
   CreateSchemaBySubjectResponse,
+  DeleteSubjectResponse,
 } from './confluent-api-types';
 import { ConfluentApiError } from './errors';
 
@@ -20,6 +21,7 @@ export class ConfluentApi {
   headers: { [k: string]: any } = {
     accept:
       'application/vnd.schemaregistry.v1+json, application/vnd.schemaregistry+json, application/json',
+    'content-type': 'application/json',
   };
 
   agent: HttpAgent | HttpsAgent;
@@ -56,15 +58,24 @@ export class ConfluentApi {
       },
     );
 
-    const json = await response.json();
-    if (json.error_code) {
-      throw new ConfluentApiError(json.error_code, json.message);
+    const halfResponse = await response.json();
+    if (halfResponse.error_code) {
+      throw new ConfluentApiError(halfResponse.error_code, halfResponse.message);
     }
 
-    return {
-      ...json,
-      schema: JSON.parse(json.schema),
-    };
+    const subjectVersion = await fetch(`${this.host}/subjects/${subject}?normalize=${normalize}`, {
+      method: 'POST',
+      headers: this.headers,
+      agent: this.agent,
+      body: JSON.stringify({ schema: JSON.stringify(schema), schemaType }),
+    });
+
+    const subjectVersionJson = await subjectVersion.json();
+    if (subjectVersionJson.error_code) {
+      throw new ConfluentApiError(subjectVersionJson.error_code, subjectVersionJson.message);
+    }
+
+    return subjectVersionJson;
   }
 
   async getSchemaById(id: number): Promise<GetSchemaByIdResponse> {
@@ -78,7 +89,7 @@ export class ConfluentApi {
       throw new ConfluentApiError(json.error_code, json.message);
     }
 
-    return { schema: JSON.parse(json.schema) };
+    return JSON.parse(json.schema);
   }
 
   async getSchemasTypes(): Promise<GetSchemasTypesResponse> {
@@ -103,6 +114,7 @@ export class ConfluentApi {
   ): Promise<GetSchemaBySubjectAndVersionResponse> {
     const json = await this.callApi(`${this.host}/subjects/${subject}/versions/${version}`);
 
+    console.log(json);
     return {
       ...json,
       schema: JSON.parse(json.schema),
@@ -130,17 +142,42 @@ export class ConfluentApi {
     return json;
   }
 
-  // async deleteSubject(subject: string): Promise<DeleteSubjectResponse> {
-  //   const response = await fetch(`${this.host}/subjects/${subject}`, {
-  //     method: 'DELETE',
-  //     headers: this.headers,
-  //   });
+  async deleteSubject(subject: string, permanent = false): Promise<DeleteSubjectResponse> {
+    const response = await fetch(`${this.host}/subjects/${subject}?permanent=${permanent}`, {
+      method: 'DELETE',
+      headers: this.headers,
+    });
 
-  //   const json = await response.json();
+    const json = await response.json();
 
-  //   if (json.error_code) {
-  //     throw new ConfluentApiError(json.error_code, json.message);
-  //   }
-  //   return json;
-  // }
+    if (json.error_code) {
+      throw new ConfluentApiError(json.error_code, json.message);
+    }
+    return json;
+  }
+
+  async configGlobalCompatibility(
+    mode:
+      | 'BACKWARD'
+      | 'BACKWARD_TRANSITIVE'
+      | 'FORWARD'
+      | 'FORWARD_TRANSITIVE'
+      | 'FULL'
+      | 'FULL_TRANSITIVE'
+      | 'NONE',
+  ) {
+    const response = await fetch(`${this.host}/config`, {
+      method: 'PUT',
+      headers: this.headers,
+      body: JSON.stringify({ compatibility: mode }),
+    });
+
+    const json = await response.json();
+
+    if (json.error_code) {
+      throw new ConfluentApiError(json.error_code, json.message);
+    }
+
+    return json;
+  }
 }

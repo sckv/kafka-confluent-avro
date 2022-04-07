@@ -73,8 +73,8 @@ export type CreateSchemaBySubject = {
 };
 
 export type CreateSchemaBySubjectResponse = {
-  subject: string;
+  // subject: string;
   id: number;
-  schema: ConfluentSchema;
-  version: number;
+  // schema: ConfluentSchema;
+  // version: number;
 };

@@ -33,7 +33,7 @@ export class SchemaRegistry {
     schemaType?: string;
     schema: ConfluentSchema;
   }) {
-    this.schemaCache.set(propertiesToCache.subject, {
+    this.schemaCache.set(`propertiesToCache.subject-${propertiesToCache.version}`, {
       id: propertiesToCache.id,
       schema: propertiesToCache.schema,
       version: propertiesToCache.version,
@@ -57,7 +57,7 @@ export class SchemaRegistry {
   ): Promise<Buffer> {
     const subject = this.createSubject(topic);
 
-    let schema = schemaCache || this.schemaCache.get(subject);
+    let schema = schemaCache || this.schemaCache.get(`${subject}-latest`);
 
     if (!schema) {
       schema = await this.confluentApi.getEntryBySubjectAndVersion(subject, 'latest');
@@ -85,16 +85,23 @@ export class SchemaRegistry {
     return this.packBuffer(schema.id, encodedPayload);
   }
 
-  async encodeMessageByTopicSafe(value: any, topic: string, recourseIndex = 1): Promise<Buffer> {
+  async encodeMessageByTopicSafe(
+    value: any,
+    topic: string,
+    {
+      recourseIndex = 1,
+      version = 'latest',
+    }: { recourseIndex?: number; version?: 'latest' | number } = {},
+  ): Promise<Buffer> {
     if (recourseIndex && recourseIndex > 3) {
       throw new NoCompatibleVersionError(value, topic, recourseIndex);
     }
 
     const subject = this.createSubject(topic);
-    let schema = this.schemaCache.get(subject);
+    let schema = this.schemaCache.get(`${subject}-${version}`);
 
     if (!schema) {
-      schema = await this.confluentApi.getEntryBySubjectAndVersion(subject, 'latest');
+      schema = await this.confluentApi.getEntryBySubjectAndVersion(subject, version);
       this.setCache(schema);
     }
 
@@ -107,13 +114,21 @@ export class SchemaRegistry {
         throw new NoCompatibleVersionError(value, topic, recourseIndex);
       }
 
-      const previousVersion = await this.confluentApi.getEntryBySubjectAndVersion(
-        subject,
-        schema.version - 1,
-      );
+      let previousVersion = this.schemaCache.get(`${subject}-${schema.version - 1}`);
 
-      this.setCache(previousVersion);
-      return this.encodeMessageByTopicSafe(value, topic, recourseIndex + 1);
+      if (!previousVersion) {
+        previousVersion = await this.confluentApi.getEntryBySubjectAndVersion(
+          subject,
+          schema.version - 1,
+        );
+
+        this.setCache(previousVersion);
+      }
+
+      return this.encodeMessageByTopicSafe(value, topic, {
+        recourseIndex: recourseIndex + 1,
+        version: schema.version - 1,
+      });
     }
   }
 
@@ -130,7 +145,6 @@ export class SchemaRegistry {
       const schema = await this.confluentApi.getSchemaById(extractedBuffer.schemaId);
       const versions = await this.confluentApi.getSchemaVersions(extractedBuffer.schemaId);
       const latestVersionSubject = versions[versions.length - 1];
-
       cached = {
         id: extractedBuffer.schemaId,
         schema,
