@@ -16,7 +16,11 @@ export class SchemaRegistry {
   private readonly MAGIC_BYTE_SCHEMA_PRESENT = Buffer.alloc(1);
 
   constructor(
-    connection: { host: string; auth?: { username: string; password: string } },
+    private connection: {
+      host: string;
+      auth?: { username: string; password: string };
+      topicSuffix?: string;
+    },
     public confluentApi: ConfluentApi = new ConfluentApi(connection.host, connection.auth),
     public avroDecoder: AvroDecoder = new AvroDecoder(),
     public schemaCache: Cache<SchemaCache> = new Cache(),
@@ -141,7 +145,7 @@ export class SchemaRegistry {
   }
 
   createSubject(topic: string): string {
-    return `${topic}-schema`;
+    return `${topic}${this.connection.topicSuffix || '-schema'}`;
   }
 
   extractBuffer(buf: Buffer) {
