@@ -132,7 +132,11 @@ export class SchemaRegistry {
     }
   }
 
-  async decode<V = any>(value: Buffer): Promise<V> {
+  async decode<V = any>(value?: Buffer | null): Promise<V | null> {
+    if (!value) {
+      return null;
+    }
+
     const extractedBuffer = this.extractBuffer(value);
 
     if (!extractedBuffer.magicByte.equals(this.MAGIC_BYTE_SCHEMA_PRESENT)) {
