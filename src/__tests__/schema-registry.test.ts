@@ -193,8 +193,6 @@ describe('Schema Registry suite', () => {
       }),
     );
 
-    console.log(buf.toString());
-
     const decoded = await schemaRegistry.decode(buf);
 
     expect(decoded).toEqual({

@@ -149,6 +149,7 @@ export class SchemaRegistry {
       const schema = await this.confluentApi.getSchemaById(extractedBuffer.schemaId);
       const versions = await this.confluentApi.getSchemaVersions(extractedBuffer.schemaId);
       const latestVersionSubject = versions[versions.length - 1];
+
       cached = {
         id: extractedBuffer.schemaId,
         schema,

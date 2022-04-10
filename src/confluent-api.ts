@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+import { Client } from 'undici';
 
 import {
   GetSchemaByIdResponse,
@@ -14,9 +14,6 @@ import {
 } from './confluent-api-types';
 import { ConfluentApiError } from './errors';
 
-import { Agent as HttpAgent } from 'http';
-import { Agent as HttpsAgent } from 'https';
-
 export class ConfluentApi {
   headers: { [k: string]: any } = {
     accept:
@@ -24,16 +21,11 @@ export class ConfluentApi {
     'content-type': 'application/json',
   };
 
-  agent: HttpAgent | HttpsAgent;
+  client: Client;
 
   constructor(public host: string, auth?: { username: string; password: string }) {
     if (auth) this.setAuth(auth);
-
-    if (host.startsWith('http://')) {
-      this.agent = new HttpAgent();
-    } else {
-      this.agent = new HttpsAgent();
-    }
+    this.client = new Client(this.host);
   }
 
   setAuth(auth: { username: string; password: string }) {
@@ -48,29 +40,28 @@ export class ConfluentApi {
     normalize = true,
     schemaType = 'AVRO',
   }: CreateSchemaBySubject): Promise<CreateSchemaBySubjectResponse> {
-    const response = await fetch(
-      `${this.host}/subjects/${subject}/versions?normalize=${normalize}`,
-      {
-        method: 'POST',
-        headers: this.headers,
-        agent: this.agent,
-        body: JSON.stringify({ schema: JSON.stringify(schema), schemaType }),
-      },
-    );
+    const stringifiedSchema = JSON.stringify({ schema: JSON.stringify(schema), schemaType });
 
-    const halfResponse = await response.json();
+    const { body } = await this.client.request({
+      path: `/subjects/${subject}/versions?normalize=${normalize}`,
+      method: 'POST',
+      headers: this.headers,
+      body: stringifiedSchema,
+    });
+
+    const halfResponse = await body.json();
     if (halfResponse.error_code) {
       throw new ConfluentApiError(halfResponse.error_code, halfResponse.message);
     }
 
-    const subjectVersion = await fetch(`${this.host}/subjects/${subject}?normalize=${normalize}`, {
+    const { body: body2 } = await this.client.request({
+      path: `/subjects/${subject}?normalize=${normalize}`,
       method: 'POST',
       headers: this.headers,
-      agent: this.agent,
-      body: JSON.stringify({ schema: JSON.stringify(schema), schemaType }),
+      body: stringifiedSchema,
     });
 
-    const subjectVersionJson = await subjectVersion.json();
+    const subjectVersionJson = await body2.json();
     if (subjectVersionJson.error_code) {
       throw new ConfluentApiError(subjectVersionJson.error_code, subjectVersionJson.message);
     }
@@ -79,17 +70,9 @@ export class ConfluentApi {
   }
 
   async getSchemaById(id: number): Promise<GetSchemaByIdResponse> {
-    const response = await fetch(`${this.host}/schemas/ids/${id}`, {
-      headers: this.headers,
-      agent: this.agent,
-    });
+    const jsonResponse = await this.callApi(`${this.host}/schemas/ids/${id}`);
 
-    const json = await response.json();
-    if (json.error_code) {
-      throw new ConfluentApiError(json.error_code, json.message);
-    }
-
-    return JSON.parse(json.schema);
+    return JSON.parse(jsonResponse.schema);
   }
 
   async getSchemasTypes(): Promise<GetSchemasTypesResponse> {
@@ -128,12 +111,13 @@ export class ConfluentApi {
   }
 
   async callApi(url: string): Promise<any> {
-    const response = await fetch(url, {
+    const { body } = await this.client.request({
+      path: url,
+      method: 'GET',
       headers: this.headers,
-      agent: this.agent,
     });
 
-    const json = await response.json();
+    const json = await body.json();
     if (json.error_code) {
       throw new ConfluentApiError(json.error_code, json.message);
     }
@@ -142,13 +126,13 @@ export class ConfluentApi {
   }
 
   async deleteSubject(subject: string, permanent = false): Promise<DeleteSubjectResponse> {
-    const response = await fetch(`${this.host}/subjects/${subject}?permanent=${permanent}`, {
+    const { body } = await this.client.request({
       method: 'DELETE',
+      path: `/subjects/${subject}?permanent=${permanent}`,
       headers: this.headers,
     });
 
-    const json = await response.json();
-
+    const json = await body.json();
     if (json.error_code) {
       throw new ConfluentApiError(json.error_code, json.message);
     }
@@ -165,14 +149,14 @@ export class ConfluentApi {
       | 'FULL_TRANSITIVE'
       | 'NONE',
   ) {
-    const response = await fetch(`${this.host}/config`, {
+    const { body } = await this.client.request({
       method: 'PUT',
+      path: `/config`,
       headers: this.headers,
       body: JSON.stringify({ compatibility: mode }),
     });
 
-    const json = await response.json();
-
+    const json = await body.json();
     if (json.error_code) {
       throw new ConfluentApiError(json.error_code, json.message);
     }

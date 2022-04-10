@@ -4,7 +4,7 @@ import { Cache } from './cache';
 import { AvroSchemaDecodeError } from './errors';
 import { ConfluentSchema } from './confluent-api-types';
 
-import { format } from 'util';
+import { format, inspect } from 'util';
 
 export class AvroDecoder {
   cache: Cache<avro.Type>;
@@ -23,6 +23,7 @@ export class AvroDecoder {
   }
 
   encode(data: string, schema: ConfluentSchema): Buffer {
+    console.log({ data, schema });
     const avroType = this.convertToType(schema);
 
     this.assertValid(avroType, data);
@@ -31,6 +32,7 @@ export class AvroDecoder {
   }
 
   convertToType(schema: avro.schema.AvroSchema | ConfluentSchema): avro.Type {
+    console.log(inspect({ schemaToConvert: schema }, true, 5, true));
     return avro.Type.forSchema(schema as any);
   }
 
