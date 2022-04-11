@@ -1,11 +1,15 @@
-import LRUCache from 'lru-native2';
+import LRUCache from 'lru-cache';
 
 export class Cache<V> {
   cache: LRUCache<V>;
 
   //180000
   constructor(maxAge = 180000) {
-    this.cache = new LRUCache({ maxLoadFactor: 2, size: 500, maxAge });
+    this.cache = new LRUCache({
+      max: 500,
+      ttl: maxAge,
+      updateAgeOnGet: true,
+    });
   }
 
   get(key: string): V | undefined {

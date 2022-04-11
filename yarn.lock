@@ -4404,12 +4404,10 @@ lru-cache@^7.3.1, lru-cache@^7.5.1, lru-cache@^7.7.1:
   resolved "https://registry.yarnpkg.com/lru-cache/-/lru-cache-7.7.3.tgz#98cd19eef89ce6a4a3c4502c17c833888677c252"
   integrity sha512-WY9wjJNQt9+PZilnLbuFKM+SwDull9+6IAguOrarOMoOHTcJ9GnXSO11+Gw6c7xtDkBkthR57OZMtZKYr+1CEw==
 
-lru-native2@^1.2.5:
-  version "1.2.5"
-  resolved "https://registry.yarnpkg.com/lru-native2/-/lru-native2-1.2.5.tgz#06ad02a631c18426f31fdca9dd827a8e6fdbb4ca"
-  integrity sha512-FJxOOmZc4u4eoBwqnyegwEk4BXIrF+dHnUGBfTk9VmYRHmgeSQER0n9sL567uzsqe8JAuhqOl5echPGQlXy4vA==
-  dependencies:
-    nan "^2.14.2"
+lru-cache@^7.8.1:
+  version "7.8.1"
+  resolved "https://registry.yarnpkg.com/lru-cache/-/lru-cache-7.8.1.tgz#68ee3f4807a57d2ba185b7fd90827d5c21ce82bb"
+  integrity sha512-E1v547OCgJvbvevfjgK9sNKIVXO96NnsTsFPBlg4ZxjhsJSODoH9lk8Bm0OxvHNm6Vm5Yqkl/1fErDxhYL8Skg==
 
 make-dir@^3.0.0:
   version "3.1.0"
@@ -4675,7 +4673,7 @@ mute-stream@~0.0.4:
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-0.0.8.tgz#1630c42b2251ff81e2a283de96a5497ea92e5e0d"
   integrity sha512-nnbWWOkoWyUsTjKrhgD0dcz22mdkSnpYqbEjIm2nhwhuxlSkpywJmBo8h0ZqJdkp73mb90SssHkN4rsRaBAfAA==
 
-nan@^2.14.2, nan@^2.15.0:
+nan@^2.15.0:
   version "2.15.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.15.0.tgz#3f34a473ff18e15c1b5626b62903b5ad6e665fee"
   integrity sha512-8ZtvEnA2c5aYCZYd1cvgdnU6cqwixRoYg70xPLWUws5ORTa/lnw+u4amixRS/Ac5U5mQVgp9pnlSUnbNWFaWZQ==
