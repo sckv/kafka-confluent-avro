@@ -1,6 +1,6 @@
 {
   "name": "kafka-confluent-avro",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "main": "lib/index.js",
   "author": "Konstanin Knyazev <konstantinknyazevsc@gmail.com>",
   "description": "Kafka Confluent Schema Registry with only avro serializer. Only can operate with previously created schemas",
