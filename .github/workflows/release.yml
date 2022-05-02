@@ -42,13 +42,13 @@ jobs:
         with:
           node-version: "16"
           yarn: true
-      - run: yarn install --frozen-lockfile
-      - run: yarn test
       - name: Cache dependencies
         uses: actions/cache@v3
         with:
-          paths: node_modules
+          path: node_modules
           key: ${{ github.sha }}
+      - run: yarn install --frozen-lockfile
+      - run: yarn test
 
   release:
     name: Release
@@ -67,7 +67,7 @@ jobs:
       - name: Cache dependencies
         uses: actions/cache@v3
         with:
-          paths: node_modules
+          path: node_modules
           key: ${{ github.sha }}
       - run: yarn build
       - name: Release
