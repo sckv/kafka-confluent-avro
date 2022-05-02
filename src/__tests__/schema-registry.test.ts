@@ -1,5 +1,3 @@
-import { Consumer, Kafka, Producer } from 'kafkajs';
-
 import { NoCompatibleVersionError } from '../errors';
 import { SchemaRegistry } from '../schema-registry';
 
@@ -43,32 +41,14 @@ const fixtures = {
 };
 
 describe('Schema Registry suite', () => {
-  let kafka: Kafka;
-  let consumer: Consumer;
-  let producer: Producer;
   let latestSchemaId: number;
 
   const schemaRegistry = new SchemaRegistry({ host: 'http://localhost:8081' });
 
   beforeAll(async () => {
-    kafka = new Kafka({
-      clientId: 'test',
-      brokers: ['localhost:9092'],
-    });
-    consumer = kafka.consumer({ groupId: 'test' });
-    producer = kafka.producer({ allowAutoTopicCreation: true });
-
-    await consumer.connect();
-    await producer.connect();
-
     await schemaRegistry.confluentApi.configGlobalCompatibility('FORWARD');
     await schemaRegistry.confluentApi.deleteSubject('test-topic-schema').catch(console.error);
     await schemaRegistry.confluentApi.deleteSubject('test-topic-schema', true).catch(console.error);
-  });
-
-  afterAll(async () => {
-    await consumer.disconnect();
-    await producer.disconnect();
   });
 
   test('Creates and retrieves a schema by direct api', async () => {

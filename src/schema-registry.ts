@@ -143,24 +143,32 @@ export class SchemaRegistry {
       return JSON.parse(value.toString()) as unknown as V;
     }
 
-    let cached = this.schemaCache.get(`${extractedBuffer.schemaId}-unique`);
+    try {
+      let cached = this.schemaCache.get(`${extractedBuffer.schemaId}-unique`);
 
-    if (!cached) {
-      const schema = await this.confluentApi.getSchemaById(extractedBuffer.schemaId);
-      const versions = await this.confluentApi.getSchemaVersions(extractedBuffer.schemaId);
-      const latestVersionSubject = versions[versions.length - 1];
+      if (!cached) {
+        const schema = await this.confluentApi.getSchemaById(extractedBuffer.schemaId);
+        const versions = await this.confluentApi.getSchemaVersions(extractedBuffer.schemaId);
+        const latestVersionSubject = versions[versions.length - 1];
 
-      cached = {
-        id: extractedBuffer.schemaId,
-        schema,
-        version: latestVersionSubject.version,
-        subject: latestVersionSubject.subject,
-      };
+        cached = {
+          id: extractedBuffer.schemaId,
+          schema,
+          version: latestVersionSubject.version,
+          subject: latestVersionSubject.subject,
+        };
 
-      this.setCache(cached);
+        this.setCache(cached);
+      }
+
+      return this.avroDecoder.decode(extractedBuffer.payload, cached.schema as any) as unknown as V;
+    } catch (error) {
+      console.log(
+        'Could not decode the message, returning JSON parsed message string as is.',
+        error,
+      );
+      return JSON.parse(value.toString()) as unknown as V;
     }
-
-    return this.avroDecoder.decode(extractedBuffer.payload, cached.schema as any) as unknown as V;
   }
 
   createSubject(topic: string): string {
