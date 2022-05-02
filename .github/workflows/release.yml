@@ -44,7 +44,7 @@ jobs:
           yarn: true
       - run: yarn install --frozen-lockfile
       - run: yarn test
-      - run: Cache dependencies
+      - name: Cache dependencies
         uses: actions/cache@v3
         with:
           paths: node_modules
@@ -64,7 +64,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "16"
-      - run: Cache dependencies
+      - name: Cache dependencies
         uses: actions/cache@v3
         with:
           paths: node_modules
