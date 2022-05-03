@@ -32,7 +32,18 @@ export class SchemaRegistry {
     version: number;
     schemaType?: string;
     schema: ConfluentSchema;
+    latest?: boolean;
   }) {
+    if (propertiesToCache.latest) {
+      this.schemaCache.set(`${propertiesToCache.subject}-latest`, {
+        id: propertiesToCache.id,
+        schema: propertiesToCache.schema,
+        version: propertiesToCache.version,
+        subject: propertiesToCache.subject,
+        schemaType: propertiesToCache.schemaType || 'AVRO',
+      });
+    }
+
     this.schemaCache.set(`${propertiesToCache.subject}-${propertiesToCache.version}`, {
       id: propertiesToCache.id,
       schema: propertiesToCache.schema,
@@ -61,7 +72,7 @@ export class SchemaRegistry {
 
     if (!schema) {
       schema = await this.confluentApi.getEntryBySubjectAndVersion(subject, 'latest');
-      this.setCache(schema);
+      this.setCache({ ...schema, latest: true });
     }
 
     const encodedPayload = this.avroDecoder.encode(value, schema.schema as any);
@@ -78,7 +89,7 @@ export class SchemaRegistry {
         'latest',
       );
 
-      this.setCache(schema);
+      this.setCache({ ...schema, latest: true });
     }
 
     const encodedPayload = this.avroDecoder.encode(value, schema.schema as any);
@@ -102,7 +113,7 @@ export class SchemaRegistry {
 
     if (!schema) {
       schema = await this.confluentApi.getEntryBySubjectAndVersion(subject, version);
-      this.setCache(schema);
+      this.setCache({ ...schema, latest: version === 'latest' });
     }
 
     try {
