@@ -33,7 +33,7 @@ export class SchemaRegistry {
     schemaType?: string;
     schema: ConfluentSchema;
   }) {
-    this.schemaCache.set(`propertiesToCache.subject-${propertiesToCache.version}`, {
+    this.schemaCache.set(`${propertiesToCache.subject}-${propertiesToCache.version}`, {
       id: propertiesToCache.id,
       schema: propertiesToCache.schema,
       version: propertiesToCache.version,

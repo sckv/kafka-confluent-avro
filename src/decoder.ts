@@ -4,7 +4,7 @@ import { Cache } from './cache';
 import { AvroSchemaDecodeError } from './errors';
 import { ConfluentSchema } from './confluent-api-types';
 
-import { format, inspect } from 'util';
+import { format } from 'util';
 
 export class AvroDecoder {
   cache: Cache<avro.Type>;
