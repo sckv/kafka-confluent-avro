@@ -1,7 +1,7 @@
 import LRUCache from 'lru-cache';
 
 export class Cache<V> {
-  cache: LRUCache<V>;
+  cache: LRUCache<string, V>;
 
   //180000
   constructor(maxAge = 180000) {
