@@ -24,7 +24,6 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@types/lru-cache": "^7.10.10",
     "avsc": "^5.7.4",
     "lru-cache": "^7.10.1",
     "undici": "^5.2.0"
