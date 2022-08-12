@@ -1,0 +1,65 @@
+name: Test branch on PR
+on:
+  pull_request:
+    branches:
+      - master
+jobs:
+  check_changes:
+    name: Check changes
+    runs-on: ubuntu-latest
+    outputs:
+      changes: ${{ steps.changes.outputs.src }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            src:
+              - 'src/**'
+              - 'package.json'
+              - 'yarn.lock'
+  testlint:
+    name: Test and Lint
+    runs-on: ubuntu-latest
+    needs: check_changes
+    if: ${{ needs.check_changes.outputs.changes == 'true' }}
+    services:
+      zookeeper:
+        image: wurstmeister/zookeeper:latest
+        ports:
+          - "2181:2181"
+      kafka:
+        image: wurstmeister/kafka:latest
+        ports:
+          - "9092:9092"
+        env:
+          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+          KAFKA_DELETE_TOPIC_ENABLE: "true"
+          KAFKA_ADVERTISED_HOST_NAME: "127.0.0.1"
+          KAFKA_LISTENERS: "INTERNAL://:29092,EXTERNAL://:9092"
+          KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka:29092,EXTERNAL://localhost:9092"
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT"
+          KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+          KAFKA_BROKER_ID: 1
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      schema-registry:
+        image: confluentinc/cp-schema-registry:7.0.1
+        ports:
+          - "8081:8081"
+        env:
+          SCHEMA_REGISTRY_HOST_NAME: schema-registry
+          SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "kafka:29092"
+          SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - run: yarn install --frozen-lockfile
+      - run: yarn lint
+      - run: yarn test
+      - run: yarn build
