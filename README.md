@@ -16,7 +16,7 @@ registry.encodeMessageByTopic(valueToEncode, 'topic');
 
 ### `encodeMessageByTopic`
 
-Encode a value with a latest schema for a topic. Subject for that stored schema should be the `${topic name}-schema`;
+Encode a value with a latest schema for a topic. Subject for that stored schema should be the `${topic name}-value`;
 
 ### `encodeMessageBySchemaId`
 
