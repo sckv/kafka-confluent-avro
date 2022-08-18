@@ -47,8 +47,8 @@ describe('Schema Registry suite', () => {
 
   beforeAll(async () => {
     await schemaRegistry.confluentApi.configGlobalCompatibility('FORWARD');
-    await schemaRegistry.confluentApi.deleteSubject('test-topic-schema').catch(console.error);
-    await schemaRegistry.confluentApi.deleteSubject('test-topic-schema', true).catch(console.error);
+    await schemaRegistry.confluentApi.deleteSubject('test-topic-value').catch(console.error);
+    await schemaRegistry.confluentApi.deleteSubject('test-topic-value', true).catch(console.error);
   });
 
   test('Creates and retrieves a schema by direct api', async () => {
@@ -63,7 +63,7 @@ describe('Schema Registry suite', () => {
     );
 
     expect(schema).toEqual(
-      expect.objectContaining({ subject: 'test-topic-schema', schema: fixtures.v1 }),
+      expect.objectContaining({ subject: 'test-topic-value', schema: fixtures.v1 }),
     );
   });
 
@@ -79,7 +79,7 @@ describe('Schema Registry suite', () => {
     );
 
     expect(schema).toEqual(
-      expect.objectContaining({ subject: 'test-topic-schema', schema: fixtures.v2 }),
+      expect.objectContaining({ subject: 'test-topic-value', schema: fixtures.v2 }),
     );
   });
 
@@ -95,7 +95,7 @@ describe('Schema Registry suite', () => {
     );
 
     expect(schema).toEqual(
-      expect.objectContaining({ subject: 'test-topic-schema', schema: fixtures.v3 }),
+      expect.objectContaining({ subject: 'test-topic-value', schema: fixtures.v3 }),
     );
   });
 
@@ -113,7 +113,7 @@ describe('Schema Registry suite', () => {
     latestSchemaId = schema.id;
 
     expect(schema).toEqual(
-      expect.objectContaining({ subject: 'test-topic-schema', schema: fixtures.v4 }),
+      expect.objectContaining({ subject: 'test-topic-value', schema: fixtures.v4 }),
     );
   });
 
