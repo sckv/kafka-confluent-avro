@@ -8,7 +8,6 @@ export class Cache<V> {
     this.cache = new LRUCache({
       max: 500,
       ttl: maxAge,
-      updateAgeOnGet: true,
     });
   }
 

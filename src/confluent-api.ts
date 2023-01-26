@@ -16,8 +16,7 @@ import { ConfluentApiError } from './errors';
 
 export class ConfluentApi {
   headers: { [k: string]: any } = {
-    accept:
-      'application/vnd.schemaregistry.v1+json, application/vnd.schemaregistry+json, application/json',
+    accept: 'application/vnd.schemaregistry.v1+json, application/vnd.schemaregistry+json, application/json',
     'content-type': 'application/json',
   };
 
@@ -29,9 +28,7 @@ export class ConfluentApi {
   }
 
   setAuth(auth: { username: string; password: string }) {
-    this.headers.authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString(
-      'base64',
-    )}`;
+    this.headers.authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`;
   }
 
   async createSchemaBySubject({
@@ -103,10 +100,7 @@ export class ConfluentApi {
     };
   }
 
-  async getSchemaBySubjectAndVersion(
-    subject: string,
-    version: number | 'latest',
-  ): Promise<GetSubjectVersionSchema> {
+  async getSchemaBySubjectAndVersion(subject: string, version: number | 'latest'): Promise<GetSubjectVersionSchema> {
     return await this.callApi(`${this.host}/subjects/${subject}/versions/${version}/schema`);
   }
 
@@ -140,14 +134,7 @@ export class ConfluentApi {
   }
 
   async configGlobalCompatibility(
-    mode:
-      | 'BACKWARD'
-      | 'BACKWARD_TRANSITIVE'
-      | 'FORWARD'
-      | 'FORWARD_TRANSITIVE'
-      | 'FULL'
-      | 'FULL_TRANSITIVE'
-      | 'NONE',
+    mode: 'BACKWARD' | 'BACKWARD_TRANSITIVE' | 'FORWARD' | 'FORWARD_TRANSITIVE' | 'FULL' | 'FULL_TRANSITIVE' | 'NONE',
   ) {
     const { body } = await this.client.request({
       method: 'PUT',

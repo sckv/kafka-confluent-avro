@@ -11,6 +11,7 @@ type SchemaCache = {
   id: number;
   schemaType?: string;
 };
+
 export class SchemaRegistry {
   private readonly DEFAULT_OFFSET = 0;
   private readonly MAGIC_BYTE_SCHEMA_PRESENT = Buffer.alloc(1);
@@ -34,7 +35,7 @@ export class SchemaRegistry {
     schema: ConfluentSchema;
     latest?: boolean;
   }) {
-    const objectToSave = {
+    const partialCacheObject = {
       id: propertiesToCache.id,
       schema: propertiesToCache.schema,
       version: propertiesToCache.version,
@@ -43,10 +44,14 @@ export class SchemaRegistry {
     };
 
     if (propertiesToCache.latest) {
-      this.schemaCache.set(`${propertiesToCache.subject}-latest`, objectToSave);
+      this.schemaCache.set(`${propertiesToCache.subject}-latest`, partialCacheObject);
     }
-    this.schemaCache.set(`${propertiesToCache.subject}-${propertiesToCache.version}`, objectToSave);
-    this.schemaCache.set(`${propertiesToCache.id}`, objectToSave);
+
+    this.schemaCache.set(
+      `${propertiesToCache.subject}-${propertiesToCache.version}`,
+      partialCacheObject,
+    );
+    this.schemaCache.set(`${propertiesToCache.id}-unique`, partialCacheObject);
   }
 
   async encodeMessageByTopic(
@@ -72,7 +77,7 @@ export class SchemaRegistry {
 
     if (!schema) {
       const schemaVersions = await this.confluentApi.getSchemaVersions(schemaId);
-      schema = await await this.confluentApi.getEntryBySubjectAndVersion(
+      schema = await this.confluentApi.getEntryBySubjectAndVersion(
         schemaVersions[0].subject,
         'latest',
       );
@@ -105,10 +110,10 @@ export class SchemaRegistry {
     }
 
     try {
-      const encodedPayload = this.avroDecoder.encode(value, schema.schema);
+      const encodedPayload = this.avroDecoder.encode(value, schema.schema as any);
       return this.packBuffer(schema.id, encodedPayload);
     } catch (error) {
-      console.log(error);
+      console.error(error);
       if (schema.version === 1) {
         throw new NoCompatibleVersionError(value, topic, recourseIndex);
       }
@@ -143,7 +148,7 @@ export class SchemaRegistry {
     }
 
     try {
-      let cached = this.schemaCache.get(`${extractedBuffer.schemaId}`);
+      let cached = this.schemaCache.get(`${extractedBuffer.schemaId}-unique`);
 
       if (!cached) {
         const schema = await this.confluentApi.getSchemaById(extractedBuffer.schemaId);
@@ -157,12 +162,12 @@ export class SchemaRegistry {
           subject: latestVersionSubject.subject,
         };
 
-        this.setCache({ ...cached, latest: true });
+        this.setCache(cached);
       }
 
-      return this.avroDecoder.decode(extractedBuffer.payload, cached.schema) as unknown as V;
+      return this.avroDecoder.decode(extractedBuffer.payload, cached.schema as any) as unknown as V;
     } catch (error) {
-      console.log(
+      console.error(
         'Could not decode the message, returning JSON parsed message string as is.',
         error,
       );

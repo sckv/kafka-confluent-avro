@@ -1,21 +1,14 @@
-import avro from 'avsc';
+import { schema, Type } from 'avsc';
 
-import { Cache } from './cache';
 import { AvroSchemaDecodeError } from './errors';
 import { ConfluentSchema } from './confluent-api-types';
 
 import { format } from 'util';
 
 export class AvroDecoder {
-  cache: Cache<avro.Type>;
-
-  constructor() {
-    this.cache = new Cache(1000 * 60 * 60 * 24);
-  }
-
   decode<V extends { [k: string]: any }>(
     buffer: Buffer,
-    schema: ConfluentSchema | avro.schema.AvroSchema,
+    schema: ConfluentSchema | schema.AvroSchema,
   ): V {
     const avroType = this.convertToType(schema);
 
@@ -30,14 +23,16 @@ export class AvroDecoder {
     return avroType.toBuffer(data);
   }
 
-  convertToType(schema: avro.schema.AvroSchema | ConfluentSchema): avro.Type {
-    return avro.Type.forSchema(schema as any);
+  convertToType(schema: ConfluentSchema): Type {
+    return Type.forSchema(schema);
   }
 
-  assertValid(type: avro.Type, value: any): boolean {
+  assertValid(type: Type, value: any): boolean {
     return type.isValid(value, {
-      errorHook: function hook(path, foundValue) {
-        throw new AvroSchemaDecodeError(format('invalid %s: %j', path.join(), foundValue));
+      errorHook: function hook(path, foundValue, type) {
+        throw new AvroSchemaDecodeError(
+          format('invalid %s - %j, should be of type %s', path.join(), foundValue, type),
+        );
       },
     });
   }

@@ -1,10 +1,10 @@
-export type ConfluentSchema = { [k: string]: any } | { [k: string]: any }[];
+import { schema } from 'avsc';
+
+export type ConfluentSchema = schema.AvroSchema;
 /**
  * @see https://docs.confluent.io/platform/current/schema-registry/develop/api.html#get--schemas-ids-int-%20id
  */
-export type GetSchemaByIdResponse = {
-  schema: ConfluentSchema;
-};
+export type GetSchemaByIdResponse = ConfluentSchema;
 
 /**
  * @see https://docs.confluent.io/platform/current/schema-registry/develop/api.html#get--schemas-types-
